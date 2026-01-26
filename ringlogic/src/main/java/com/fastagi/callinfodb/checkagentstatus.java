@@ -1,4 +1,4 @@
-package com.fastagi.callinfo;
+package com.fastagi.callinfodb;
 
 import java.sql.SQLException;
 
@@ -6,10 +6,10 @@ import javax.sql.DataSource;
 
 import com.fastagi.config.Database;
 
-public class callinfo {
+public class checkagentstatus {
     
 
-    public void getCallInfo(){
+    public void getAgentStatus(){
 
                    DataSource db=Database.getDataSource();
                         try(java.sql.Connection conn=db.getConnection();java.sql.PreparedStatement stmt=conn.prepareStatement("SELECT * FROM `agent_status` LIMIT 1;")){
@@ -24,6 +24,7 @@ public class callinfo {
                         }
     
     }
+
 
 
 }

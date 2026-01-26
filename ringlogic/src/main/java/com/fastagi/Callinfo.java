@@ -2,7 +2,7 @@ package com.fastagi;
 
 import org.asteriskjava.fastagi.BaseAgiScript;
 
-import com.fastagi.callinfo.callinfo;
+import com.fastagi.callinfodb.callinfo;
 
 import org.asteriskjava.fastagi.AgiException;
 

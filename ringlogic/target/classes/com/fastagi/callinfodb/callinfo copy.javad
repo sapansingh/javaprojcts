@@ -1,0 +1,134 @@
+package com.fastagi.callinfodb;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import javax.sql.DataSource;
+
+public class callinfo {
+
+    private DataSource dataSource;
+
+    // ✅ Constructor to initialize dataSource
+    public callinfo(DataSource ds) {
+        this.dataSource = ds;
+    }
+
+    // Method to fetch agent status
+    public void getCallInfo() {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement("SELECT * FROM `agent_status` LIMIT 1;")) {
+
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                System.out.println("Agent Status: " + rs.getString("status"));
+            } else {
+                System.out.println("No agent status found.");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Insert new CDR log
+    public void insertCdrLog(String extension, String callerId, String uniqueId,
+                             String channel, String callType, String didNum,
+                             String routeName, String callReferenceNo, String callMode) {
+
+        String insertQuery = "INSERT INTO cdr_log_buffer " +
+                "(server_ip, phone_number, extension, entry_date, uniqueid, channel, " +
+                "call_referenceno, call_type, call_mode, traverse_path, did_num, route_name) " +
+                "VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS)) {
+
+            String currentServerIp = getCurrentServerIp();
+            String traversePath = "Route_Name:" + routeName + "~DNID:" + didNum + "~ANI:" + callerId;
+
+            stmt.setString(1, currentServerIp);
+            stmt.setString(2, callerId);
+            stmt.setString(3, extension);
+            stmt.setString(4, uniqueId);
+            stmt.setString(5, channel);
+            stmt.setString(6, callReferenceNo);
+            stmt.setString(7, callType);
+            stmt.setString(8, callMode);
+            stmt.setString(9, traversePath);
+            stmt.setString(10, didNum);
+            stmt.setString(11, routeName);
+
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows > 0) {
+                try (ResultSet rs = stmt.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        long cdrLogId = rs.getLong(1);
+                        System.out.println("Inserted CDR Log ID: " + cdrLogId);
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Update existing CDR log
+    public void updateCdrLog(String callReferenceNo, String callEndNode, String status,
+                             int billSec, String hangupCauseCode, String completedBy,
+                             String callType, String dialerStatus, String process) {
+
+        String selectQuery = "SELECT cdr_id, dialer_status, billsec, completed_by " +
+                             "FROM cdr_log_buffer WHERE call_referenceno=? ORDER BY cdr_id LIMIT 1";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement selectStmt = conn.prepareStatement(selectQuery)) {
+
+            selectStmt.setString(1, callReferenceNo);
+            try (ResultSet rs = selectStmt.executeQuery()) {
+                if (rs.next()) {
+                    long cdrId = rs.getLong("cdr_id");
+                    String currentDialerStatus = rs.getString("dialer_status");
+                    int currentBillSec = rs.getInt("billsec");
+
+                    if (!"ANSWERED".equals(currentDialerStatus) || currentBillSec == 0) {
+                        String updateQuery = "UPDATE cdr_log_buffer SET " +
+                                "call_end_node=?, modified_date=NOW(), status=?, billsec=?, " +
+                                "hangup_cause_code=?, completed_by=?, call_type=?, dialer_status=?, process=? " +
+                                "WHERE call_referenceno=?";
+
+                        try (PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
+                            updateStmt.setString(1, callEndNode);
+                            updateStmt.setString(2, status);
+                            updateStmt.setInt(3, billSec);
+                            updateStmt.setString(4, hangupCauseCode);
+                            updateStmt.setString(5, completedBy);
+                            updateStmt.setString(6, callType);
+                            updateStmt.setString(7, dialerStatus);
+                            updateStmt.setString(8, process);
+                            updateStmt.setString(9, callReferenceNo);
+
+                            int updatedRows = updateStmt.executeUpdate();
+                            System.out.println("Updated CDR Rows: " + updatedRows);
+                        }
+                    }
+                } else {
+                    System.out.println("No CDR record found for: " + callReferenceNo);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Dummy method for current server IP
+    private String getCurrentServerIp() {
+        // Replace this with actual logic to fetch server IP
+        return "127.0.0.1";
+    }
+}
