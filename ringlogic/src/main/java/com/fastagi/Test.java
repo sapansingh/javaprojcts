@@ -2,7 +2,7 @@ package com.fastagi;
 
 import org.asteriskjava.fastagi.BaseAgiScript;
 
-import com.fastagi.callinfodb.callinfo;
+
 
 import org.asteriskjava.fastagi.AgiException;
 
@@ -11,8 +11,7 @@ public class Test extends BaseAgiScript {
     public void service(org.asteriskjava.fastagi.AgiRequest request,
                         org.asteriskjava.fastagi.AgiChannel channel) throws AgiException {
        
-                 callinfo ci=new callinfo();
-                 ci.getCallInfo();
+       
 
 
                             answer();
