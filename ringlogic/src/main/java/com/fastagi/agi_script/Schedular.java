@@ -1,6 +1,7 @@
 package com.fastagi.agi_script;
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -8,6 +9,7 @@ import java.util.Random;
 import org.asteriskjava.fastagi.AgiException;
 import org.asteriskjava.fastagi.BaseAgiScript;
 
+import com.fastagi.repository.Ivr_repo;
 import com.fastagi.repository.Schedular_repo;
 
 public class Schedular extends BaseAgiScript {
@@ -118,7 +120,7 @@ public class Schedular extends BaseAgiScript {
         setVariable("ivr_id", ivrData);
         setVariable("orignal_did", did);
         setVariable("ROUTE_NAME", routeName);
-        exec("Goto", "ringlogic_ivr,ivr,1");
+        exec("Goto", "ringlogic-ivr,ivr,1");
     }
 
     private void handleExtension(String did, String callerId, String action, 
@@ -163,7 +165,7 @@ public class Schedular extends BaseAgiScript {
         System.out.println("Route to: convox_callforward,callforward,1");
         
         // Route to call forward context
-        exec("Goto", "convox_callforward,callforward,1");
+        exec("Goto", "convox-callforward,callforward,1");
     }
 
     private void handleCallForward(String did, String callerId, String action, 
@@ -186,7 +188,7 @@ public class Schedular extends BaseAgiScript {
         setVariable("orignal_did", did);
         
         System.out.println("Routing to call forward context");
-        exec("Goto", "convox_callforward,callforward,1");
+        exec("Goto", "convox-callforward,callforward,1");
     }
 
     private void handleVoicemail(String did, String voicemailId, String routeName) throws AgiException {
@@ -194,7 +196,7 @@ public class Schedular extends BaseAgiScript {
         setVariable("voicemail_id", voicemailId);
         setVariable("orignal_did", did);
         setVariable("ROUTE_NAME", routeName);
-        exec("Goto", "ringlogic_voicemail,voicemail,1");
+        exec("Goto", "ringlogic-voicemail,voicemail,1");
     }
 
     private void handleProcess(String did, String process, String routeName) throws AgiException {
@@ -202,15 +204,32 @@ public class Schedular extends BaseAgiScript {
         setVariable("process", process);
         setVariable("orignal_did", did);
         setVariable("ROUTE_NAME", routeName);
-        exec("Goto", "ringlogic_process,process,1");
+        exec("Goto", "ringlogic-process,process,1");
     }
 
     private void handleQueue(String did, String queueId, String routeName) throws AgiException {
-        System.out.println("Routing to queue: " + queueId);
-        setVariable("queue_id", queueId);
-        setVariable("orignal_did", did);
-        setVariable("ROUTE_NAME", routeName);
-        exec("Goto", "ringlogic_queue,queue,1");
+      
+        long nowDateEpoch = Instant.now().getEpochSecond();
+        setVariable("IVR_END_EPOCH", String.valueOf(nowDateEpoch));
+        
+        List<String> QueueOptions = new Ivr_repo().getquename(queueId);
+        
+        String queue_did=QueueOptions.get(0);
+        String queue_name=QueueOptions.get(1);
+
+        if (!queue_name.isEmpty()) {
+            exec("goto", "ringlogic-direct-queue",queue_did,",1");
+
+            
+        }else {
+
+                System.out.println("No queue found for destination: " + queueId);
+                // Handle the case where no queue is found (e.g., route to a default IVR, hang up, etc.)
+                exec("Goto", "ringlogic-ivr,ivr,1");
+        }
+        
+        System.out.println("Routing to Queue: " + queueId);
+
     }
 
     private void handleIP(String did, String ipAddress, String routeName) throws AgiException {
@@ -218,7 +237,7 @@ public class Schedular extends BaseAgiScript {
         setVariable("ip_address", ipAddress);
         setVariable("orignal_did", did);
         setVariable("ROUTE_NAME", routeName);
-        exec("Goto", "ringlogic_ip,ip,1");
+        exec("Goto", "ringlogic-ip,ip,1");
     }
 
     private void handlePlayType(String fileId) throws AgiException {
@@ -252,7 +271,7 @@ public class Schedular extends BaseAgiScript {
 
     private void handleMisscall(String did) throws AgiException {
         System.out.println("Routing to misscall handler for DID: " + did);
-        exec("Goto", "ringlogic_misscall," + did + ",1");
+        exec("Goto", "ringlogic-misscall," + did + ",1");
     }
 
     private String generateRecordingFilePath(String callerId, String channelName, String cdrLogId) {

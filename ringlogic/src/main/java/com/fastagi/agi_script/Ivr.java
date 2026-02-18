@@ -127,10 +127,11 @@ String dtmf_pressed="";
                 break;
 
             case "process":
-              
+             
                 break;
 
             case "queue":
+            queueProcess(ivr_id,destination);
               
                 break;
 
@@ -170,8 +171,39 @@ private void handleIVR(String did, String destination) throws AgiException {
         setVariable("orignal_did", did);
         setVariable("ROUTE_NAME", destination);
         System.out.println("Set variables for IVR routing: ivr_id=" + ivrData + ", original_did=" + did + ", ROUTE_NAME=" + destination);
-        exec("Goto", "ringlogic_ivr,ivr,1");
+        exec("Goto", "ringlogic-ivr,ivr,1");
     }
+    
+//Logic for queue process
+    private void queueProcess(String ivr_id,String destination) throws AgiException {
+        // TODO Auto-generated method stub
+
+        long nowDateEpoch = Instant.now().getEpochSecond();
+        setVariable("IVR_END_EPOCH", String.valueOf(nowDateEpoch));
+        
+        List<String> QueueOptions = new Ivr_repo().getquename(destination);
+        
+        String queue_did=QueueOptions.get(0);
+        String queue_name=QueueOptions.get(1);
+
+        if (!queue_name.isEmpty()) {
+            exec("goto", "ringlogic-direct-queue",queue_did,"1");
+
+            
+        }else {
+
+                System.out.println("No queue found for destination: " + destination);
+                // Handle the case where no queue is found (e.g., route to a default IVR, hang up, etc.)
+                exec("Goto", "ringlogic-ivr,ivr,1");
+        }
+        
+        System.out.println("Routing to Queue: " + destination);
+
+      
+    }
+
+
+
 }
 
 

@@ -110,4 +110,29 @@ public class Schedular_repo {
 
 return ivrid;
 }
+
+
+public List<String> getquename(String queueid){
+
+    String sql = "SELECT queue_did,queue_name FROM convoxccs_queues WHERE queue_did=? AND queue_assigned_process!=''";
+
+    try(Connection conn = db.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+        stmt.setString(1, queueid);
+        ResultSet rs = stmt.executeQuery();
+
+        List<String> queueNames = new ArrayList<>();
+        while (rs.next()) {
+            queueNames.add(rs.getString("queue_did"));
+            queueNames.add(rs.getString("queue_name"));
+        }
+        return queueNames;
+    } catch (SQLException e) {
+        System.err.println("Database error in getquename: " + e.getMessage());
+        e.printStackTrace();
+    }
+
+    return List.of(); // Return empty list if no results or error
+}
 }

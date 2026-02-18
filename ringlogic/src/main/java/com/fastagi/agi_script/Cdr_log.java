@@ -34,7 +34,10 @@ public class Cdr_log extends BaseAgiScript {
         String dnid = args.length > 5 ? args[5] : "";                // ${DNID}
         String callerIdDnid = args.length > 6 ? args[6] : "";        // ${CALLERID(dnid)}
         String callerIdAni = args.length > 7 ? args[7] : "";
-         String callReferenceNo = args.length > 8 ? args[8] : "";  
+         String callReferenceNo = args.length > 9 ? args[9] : "";  
+         String ipaddress= args.length > 8 ? args[8] : "";
+
+
         
 String callType="incoming" ;
 String RouteName="NA";
@@ -134,7 +137,7 @@ if(args.length>9 && args[9].length() > 0) {
 }
 
 
- cdrlogid=cdrLogRepo.setcdrlog("192.168.200.52",callerIdNum,exten,uniqueId,Channel,callReferenceNo,callType,call_mode,traverse_path,callerIdDnid,RouteName);
+ cdrlogid=cdrLogRepo.setcdrlog(ipaddress,callerIdNum,exten,uniqueId,Channel,callReferenceNo,callType,call_mode,traverse_path,callerIdDnid,RouteName);
 
 setVariable("CDRLOGID", String.valueOf(cdrlogid));
 
@@ -174,13 +177,9 @@ setVariable("CDRLOGID", String.valueOf(cdrlogid));
     String recordingstudio_end_epoch = args.length > 28 ? args[28] : "0";
 
 
-
-    
             
         }
        
-
-
    
 }
         
